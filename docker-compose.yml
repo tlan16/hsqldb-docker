@@ -2,12 +2,13 @@ version: '3.8'
 
 services:
   hsqldb:
-    build: .
-    container_name: hsqldb-server
+    build:
+      context: .
+    container_name: hsqldb
     ports:
       - "9001:9001"
     volumes:
-      - ./hsqldb-data:/opt/hsqldb/data
+      - ./data:/opt/hsqldb/data
     environment:
       - JAVA_OPTS=-Xmx512m
     restart: unless-stopped
