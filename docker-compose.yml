@@ -1,13 +1,23 @@
-# Jenkins Master
-jenkins:
-  image: blacklabelops/hsqldb
-  container_name: hsqldb
-  ports:
-   - "9001:9001"
-  volumes:
-    - /opt/database
-  env_file:
-    - docker-compose.env
-  labels:
-    com.blacklabelops.description: "HSQL Development System"
-    com.blacklabelops.service: "hsqldb-server"
+version: '3.8'
+
+services:
+  hsqldb:
+    build: .
+    container_name: hsqldb-server
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./hsqldb-data:/opt/hsqldb/data
+    environment:
+      - JAVA_OPTS=-Xmx512m
+    restart: unless-stopped
+  hsqldb-python-client:
+    build:
+      context: clients/python/
+    depends_on:
+      hsqldb:
+        condition: service_healthy
+    volumes:
+      - ./clients/python/:/app/
+      - /app/.venv
+    container_name: hsqldb-python-client

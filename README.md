@@ -1,198 +1,188 @@
-# Docker Image with HSQLDB for Software Development.
+# HSQLDB Docker Container with Health Check
 
-## Release: blacklabelops/hsqldb:latest
+This project provides a Docker container for HSQLDB with a comprehensive health check system.
 
-Installed Software:
+## Features
 
-  * Java 8
-  * HSQLDB
-  * SQLTool
+- **HSQLDB Server**: Runs HSQLDB 2.7.1 on port 9001
+- **Health Check**: Multi-layered health checking including:
+  - Port connectivity test
+  - Database connection test
+  - SQL query execution test
+- **Security**: Runs as non-root user
+- **Persistence**: Data is stored in a Docker volume
 
-# Make It Short
+## Quick Start
 
-In short, use this image for starting and stopping a simple HSQLDB on your develeopment
-environment.
+### Using Docker Compose (Recommended)
 
-~~~~
-$ docker run -d -p 9001:9001 --name hsqldb blacklabelops/hsqldb
-~~~~
+```bash
+# Build and start the container
+docker-compose up -d
 
-> Will run hsqldb which will be accessible through jdbc URL: jdbc:hsqldb:hsql://localhost/test, Username: sa, Password :
+# Check health status
+docker-compose ps
 
-Recommended: Docker-Compose! Just curl the files and modify the environment-variables inside
-the .env-file.
+# View logs
+docker-compose logs -f hsqldb
 
-~~~~
-$ curl -O https://raw.githubusercontent.com/blacklabelops/hsqldb/master/docker-compose.yml
-$ curl -O https://raw.githubusercontent.com/blacklabelops/hsqldb/master/docker-compose.env
-$ docker-compose up -d
-~~~~
+# Stop the container
+docker-compose down
+```
 
-> [docker-compose.env](https://github.com/blacklabelops/hsqldb/blob/master/docker-compose.env) contains a full list of environment variables.
+### Using Docker directly
 
-# Connect to HSQLDB
+```bash
+# Build the image
+docker build -t hsqldb-server .
 
-The following commands copy the UI-Binaries out of the running container and starts the UI locally:
-
-~~~~
-$ docker cp hsqldb:/opt/hsqldb/hsqldb.jar .
-$ java -jar hsqldb.jar
-~~~~
-
-> Needs local installation of a Java-JRE!
-
-Inside the UI select "HSQL Database Engine Server" and enter the JDBC URL: jdbc:hsqldb:hsql://localhost/test
-
-> Note: When you use boot2docker then enter the ip of your VM instead of 'localhost'!
-
-# Use the SQLTool Client
-
-SQLTool is a command line client for HSQL: [Documentation](http://hsqldb.org/doc/2.0/util-guide/sqltool-chapt.html)
-
-## Connect SQLTool from container
-
-Simply start a connected cli by typing:
-
-~~~~
-$ docker exec -it hsqldb bash -c "java -jar /opt/hsqldb/sqltool.jar db"
-~~~~
-
-If you want to mount your script directory, then start a new container:
-
-~~~~
-$ docker run -it --rm \
-  --link hsqldb:hsqldb \
-	-v $(pwd)/dbscripts:/scripts \
-	blacklabelops/hsqldb sqltool
-~~~~
-
-> The folder /scripts is a Volume with the appropriate user permissions.
-
-## Connect SQLTool from your Host
-
-Boot2Docker: First start the server with the host environment variable:
-
-~~~~
-$ docker run -d --name hsqldb \
-	-e "HSQLDB_DATABASE_HOST=192.168.99.100" \
-	-p 9001:9001 \
-	blacklabelops/hsqldb
-~~~~
-
-> The sqltool settings sqltool.rc will now include the correct host.
-
-Execute SQLTool on your host:
-
-~~~~
-# Copy the binaries to your host
-$ docker cp hsqldb:/opt/hsqldb .
-# Copy settings.rc to your home directory
-$ cp ./hsqldb/sqltool.rc ~
-# Start sql tool
-$ java -jar ./hsqldb/sqltool.jar test
-~~~~
-
-# Set Username and Password
-
-You can specify the Username and Password with the environment variables HSQLDB_USER and HSQLDB_PASSWORD.
-
-Example:
-
-~~~~
-$ docker run -d --name hsqldb \
-	-e "HSQLDB_USER=sa" \
-  -e "HSQLDB_PASSWORD=password" \
-	-p 9001:9001 \
-	blacklabelops/hsqldb
-~~~~
-
-> Default container user is 'sa' and empty password!
-
-# Set the Database alias
-
-You can adjust the Database Alias with the environment variable: HSQLDB_DATABASE_ALIAS
-
-This will change the JDBC URL you will have to use!
-
-Example:
-
-~~~~
-$ docker run -d --name hsqldb \
-	-e "HSQLDB_DATABASE_ALIAS=xdb" \
-	-p 9001:9001 \
-	blacklabelops/hsqldb
-~~~~
-
-> The correct JDBC URL is now: jdbc:hsqldb:hsql://localhost/xdb
-
-# Set the Database Name
-
-You can specify the Database Name with the environment variable HSQLDB_DATABASE_NAME
-
-Example:
-
-~~~~
-$ docker run -d --name hsqldb \
-	-e "HSQLDB_DATABASE_NAME=hsqldb" \
-	-p 9001:9001 \
-	blacklabelops/hsqldb
-~~~~
-
-> Database hsqldb will be available in folder /opt/database
-
-# Mount the Database Files Externally
-
-The database files are inside the volume /opt/database and can be mounted.
-
-Example:
-
-~~~~
-$ docker run -d --name hsqldb \
-	-v $(pwd)/database:/opt/database \
-	-p 9001:9001 \
-	blacklabelops/hsqldb
-~~~~
-
-> pwd is a Linux directive!
-
-# Additional HSQLDB Parameters
-
-This container supports the following additional settings:
-
-* Disable HSQL Trace Modus (do not display JDBC trace messages): HSQLDB_TRACE="false"
-* Enable HSQL Silent Mode (true => do not display all queries): HSQLDB_SILENT="true"
-* Disable HSQL Remote Connections (can open databases remotely): HSQLDB_REMOTE="false"
-* Set HSQL Database Host (for sqltool.rc): HSQLDB_DATABASE_HOST="192.168.99.100"
-
-Example:
-
-~~~~
-$ docker run -d --name hsqldb \
-  -e "HSQLDB_TRACE=false" \
-  -e "HSQLDB_SILENT=true" \
-  -e "HSQLDB_REMOTE=false" \
-  -e "HSQLDB_DATABASE_HOST=192.168.99.100" \
+# Run the container
+docker run -d \
+  --name hsqldb-server \
   -p 9001:9001 \
-  blacklabelops/hsqldb
-~~~~
+  -v hsqldb_data:/opt/hsqldb/data \
+  hsqldb-server
 
-# Java-VM Parameters
+# Check health status
+docker ps
 
-You can define start up parameters for the Java Virtual Machine, e.g. setting the memory size.
+# View health check logs
+docker logs hsqldb-server
+```
 
-~~~~
-$ docker run -d --name hsqldb \
-	-e "JAVA_VM_PARAMETERS=-Xmx512m -Xms256m" \
-	-p 9001:9001 \
-	blacklabelops/hsqldb
-~~~~
+## Health Check Details
 
-> You will have to use Java 8 parameters: [JRE 8 Linux](http://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html).
+The health check performs the following tests:
 
-# References
+1. **Port Check**: Verifies that port 9001 is accessible
+2. **Connection Test**: Attempts to establish a JDBC connection
+3. **Query Test**: Executes a simple SQL query to ensure the database is responsive
 
-* [HSQLDB](http://hsqldb.org/)
-* [Docker Homepage](https://www.docker.com/)
-* [Docker Compose](https://docs.docker.com/compose/)
-* [Docker Userguide](https://docs.docker.com/userguide/)
-* [Oracle Java8](https://java.com/de/download/)
+### Health Check Configuration
+
+- **Interval**: 30 seconds between checks
+- **Timeout**: 10 seconds per check
+- **Retries**: 3 failed attempts before marking as unhealthy
+- **Start Period**: 40 seconds grace period during startup
+
+## Connecting to HSQLDB
+
+### Connection Details
+
+- **Host**: localhost (or container IP)
+- **Port**: 9001
+- **Database**: mydb
+- **Username**: SA
+- **Password**: (empty)
+- **JDBC URL**: `jdbc:hsqldb:hsql://localhost:9001/mydb`
+
+### Example Connection (Java)
+
+```java
+import java.sql.*;
+
+public class HSQLDBExample {
+    public static void main(String[] args) {
+        String url = "jdbc:hsqldb:hsql://localhost:9001/mydb";
+        String user = "SA";
+        String password = "";
+        
+        try {
+            Connection conn = DriverManager.getConnection(url, user, password);
+            System.out.println("Connected to HSQLDB!");
+            conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+## Monitoring
+
+### Check Container Health
+
+```bash
+# View health status
+docker inspect hsqldb-server | grep -A 10 '"Health"'
+
+# Or with docker-compose
+docker-compose ps
+```
+
+### Manual Health Check
+
+```bash
+# Run health check manually
+docker exec hsqldb-server /usr/local/bin/healthcheck.sh
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Container fails to start**:
+   - Check if port 9001 is already in use
+   - Verify Docker has sufficient resources
+
+2. **Health check fails**:
+   - Check container logs: `docker logs hsqldb-server`
+   - Verify HSQLDB is starting properly
+   - Ensure no firewall is blocking port 9001
+
+3. **Connection refused**:
+   - Wait for the start period (40 seconds) to complete
+   - Check if the container is healthy: `docker ps`
+
+### Logs
+
+```bash
+# View all logs
+docker logs hsqldb-server
+
+# Follow logs in real-time
+docker logs -f hsqldb-server
+
+# View only health check logs
+docker logs hsqldb-server 2>&1 | grep HEALTHCHECK
+```
+
+## Customization
+
+### Environment Variables
+
+You can customize the setup by modifying the `docker-compose.yml` file:
+
+```yaml
+environment:
+  - JAVA_OPTS=-Xmx1g  # Increase memory
+```
+
+### Database Configuration
+
+To change database settings, modify the CMD in the Dockerfile:
+
+```dockerfile
+CMD ["java", "-cp", "/opt/hsqldb.jar", "org.hsqldb.server.Server", \
+     "--database.0", "file:data/mydb", "--dbname.0", "mydb", \
+     "--port", "9001", "--silent", "false", "--trace", "true"]
+```
+
+## Security Notes
+
+- The container runs as a non-root user (`hsqldb`)
+- Default HSQLDB configuration uses SA user with no password
+- For production use, consider:
+  - Setting up proper authentication
+  - Using encrypted connections
+  - Restricting network access
+
+## File Structure
+
+```
+.
+├── Dockerfile              # Main Docker image definition
+├── docker-compose.yml      # Docker Compose configuration
+├── healthcheck.sh          # Health check script
+└── README.md              # This file
+```
